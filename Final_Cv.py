@@ -6,7 +6,7 @@ from docx import Document
 import pandas as pd
 import dash
 # With these lines
-
+import base64
 import dash_bootstrap_components as dbc
 from dash import dcc, html, dash_table
 import fitz
@@ -19,19 +19,32 @@ import openai
 import openpyxl
 
 import json
+
+import base64
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+import io
 # OpenAI API key
-openai.api_key = ('')
+openai.api_key = ('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')
 
 df = pd.DataFrame()
+sample_contract_path = 'C:\\Users\\harshini\\Documents\\ContractVest_V1\\Complete_with_DocuSign_MSA-Exafluence-UnicaT.pdf'
 
+sample_checklist_path = 'C:\\Users\\harshini\\Documents\\ContractVest_V1\\ChecklistTest.xlsx'
 
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'
+]
 # Custom colors
 table_header_color = '#427D9D'
 border_color = '#9BBEC8'
-pie_chart_colors = ['#164863', '#9BBEC8']
+#pie_chart_colors = ['#164863', '#9BBEC8']
 
-# Create Dash app with suppress_callback_exceptions=True
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+pie_chart_colors = ['#164863', '#ff4757']
+# Initialize Dash app
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 
 
 
@@ -51,9 +64,9 @@ app.layout = html.Div(children=[
             'color': 'white',
         },
         children=[
-            html.H1('ContractVest V1.0', style={'margin': '0px', 'text-align': 'center'}),
+            html.H1('ContractVest', style={'margin': '0px', 'text-align': 'center'}),
             html.Br(),
-            html.P('Bullet Proof Your Contractual Agreements', style={'text-align': 'center'}),
+            html.P('Bullet Proof Your Contractual Agreements', style={'margin-bottom':'0rem','font-size':'25px','text-align': 'center'}),
         ]
     ),
 
@@ -70,7 +83,8 @@ app.layout = html.Div(children=[
                             html.Strong('Contract'),
                             ' files here Or click to browse',
                             html.Button('Upload File', style={
-                                'margin-left': '350px',
+                                'margin-left': '550px',
+                                'margin-top':' 3px',
                                 'background-image': 'linear-gradient(-180deg, #37AEE2 0%, #1E96C8 100%)',
                                 'border-radius': '.5rem',
                                 'box-sizing': 'border-box',
@@ -88,6 +102,8 @@ app.layout = html.Div(children=[
                         ])
                     ],
                     style={
+                        'position':'relative',
+                        'left': '-30px',
                         'width': '100%',
                         'height': '63px',
                         'lineHeight': '60px',
@@ -102,6 +118,36 @@ app.layout = html.Div(children=[
                     },
                     multiple=False
                 ),
+                                        # Sample Contract Download Button with Download Icon
+                html.Div([
+                    dcc.Download(id="download-contract"),
+                    html.Button(
+                        [
+                            html.I(className="fas fa-download", style={'margin-right': '5px'}),
+                            #'Download Contract',
+                        ],
+                        id='btn-download-sample-contract',
+                        n_clicks=0,
+                        style={
+                            'width': '52px',
+                            'position': 'relative',
+                            'left': '1295px',
+                            'top': '-75px',
+                            'background-image': 'linear-gradient(-180deg, #37AEE2 0%, #1E96C8 100%)',
+                            'border-radius': '.5rem',
+                            'box-sizing': 'border-box',
+                            'color': '#FFFFFF',
+                            'font-size': '16px',
+                            'text-decoration': 'none',
+                            'border': '0',
+                            'cursor': 'pointer',
+                            'user-select': 'none',
+                            'padding': '10px 20px',
+                            'display': 'inline-block',
+                        }
+                    ),
+                ]),
+      
 
                 dbc.Alert(
                     id="mca_alert",
@@ -110,7 +156,9 @@ app.layout = html.Div(children=[
                     fade=True,
                     style={'margin-left': '50px'}
                 ),
-            ], style={'padding-bottom': '30px'}, ),
+            ], 
+                #style={'padding-bottom': '30px'},
+                ),
 
             # Checklist File Upload
             html.Div(className='file-upload', children=[
@@ -122,7 +170,8 @@ app.layout = html.Div(children=[
                             html.Strong('Checklist'),
                             ' file here Or click to browse',
                             html.Button('Upload File', style={
-                                'margin-left': '350px',
+                                'margin-left': '550px',
+                                'margin-top':' 9px',
                                 'background-image': 'linear-gradient(-180deg, #37AEE2 0%, #1E96C8 100%)',
                                 'border-radius': '.5rem',
                                 'box-sizing': 'border-box',
@@ -140,6 +189,8 @@ app.layout = html.Div(children=[
                         ])
                     ],
                     style={
+                        'position':'relative',
+                        'left': '-30px',
                         'width': '100%',
                         'height': '69px',
                         'lineHeight': '60px',
@@ -153,6 +204,36 @@ app.layout = html.Div(children=[
                     },
                     multiple=False
                 ),
+               # Sample Checklist Download Button with Download Icon
+               html.Div([
+                   dcc.Download(id="download-checklist"),
+                   html.Button(
+                       [
+                           html.I(className="fas fa-download", style={'margin-right': '5px'}),
+                           #'Download Contract',
+                       ],
+                       id='btn-download-sample-checklist',
+                       n_clicks=0,
+                       style={
+                           'width': '52px',
+                           'position': 'relative',
+                           'left': '1295px',
+                           'top': '-75px',
+                           'background-image': 'linear-gradient(-180deg, #37AEE2 0%, #1E96C8 100%)',
+                           'border-radius': '.5rem',
+                           'box-sizing': 'border-box',
+                           'color': '#FFFFFF',
+                           'font-size': '16px',
+                           'text-decoration': 'none',
+                           'border': '0',
+                           'cursor': 'pointer',
+                           'user-select': 'none',
+                           'padding': '10px 20px',
+                           'display': 'inline-block',
+                       }
+                   ),
+               ]),
+     
 
                 dbc.Alert(
                     id="checklist-success-alert",
@@ -161,16 +242,19 @@ app.layout = html.Div(children=[
                     fade=True,
                     style={'margin-left': '50px'}
                 ),
-            ], style={'padding-bottom': '50px'}, ),
+            ], 
+                #style={'padding-bottom': '50px'},
+                ),
 
         ], style={
             'display': 'center',
-            'padding-top': '120px'
+            'padding-top': '50px'
         }),
         # Submit Button
         html.Button('Run Checklist', id='submit-button', n_clicks=0, style={
             'position': 'relative',
             'left': '560px',
+            'top' :'-15px',
             'background-image': 'linear-gradient(-180deg, #37AEE2 0%, #1E96C8 100%)',
             'border-radius': '.5rem',
             'box-sizing': 'border-box',
@@ -196,7 +280,8 @@ app.layout = html.Div(children=[
            'color': 'white',  
            'margin': 'auto',  
            'margin-top': '20px',  
-           'text-align': 'center',  
+           'text-align': 'center',
+           'font-size':'19px'
        })
         
 
@@ -243,87 +328,6 @@ def upload_excel_as_df(file_content):
     except Exception as e:
         print(f"Error reading Excel file: {e}")
         return None
-
-'''
-def query_openai(prompt):
-    try:
-        response = openai.Completion.create(
-            engine="gpt-3.5-turbo-instruct",  
-            prompt=prompt,
-            temperature=0,
-            max_tokens=750
-        )
-        return response['choices'][0]['text']
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-      
-def create_analysis_prompt(checklist_items, contract_text):
-    prompt = ("Analyze the uploaded Contractual Agreement file and determine if the checklist items in the uploaded Excel File are satsified or not. "
-              "For each item provide in-depth analysis."
-              "Even if the clause is explicitly included in the agreement, the analysis and sugessted amendments/improvements must also be done accordingly. "
-              "The exact section number based on the category/clause/sub-clause of the checklist items from the contractual agreement must be mentioned for every checklist item. "
-              "It is very critical that you answer only as the above object and JSON stringify it as a single string. "
-              "Don't include any other verbose explanations and don't include the markdown syntax anywhere.\n\n")
-    prompt += "Example of format with proper spacing:\n"
-    prompt += '{\n'
-    prompt += '  "Checklist Item 1: Clause for pre-existing IP": {\n'
-    prompt += '    "S.No": "1",\n'
-    prompt += '    "Status": "Satisfied/Not satisfied",\n'
-    prompt += '    "Category": "Intellectual Property Rights",\n'
-    prompt += '    "Section Number": "4.1.1",\n'
-    prompt += '    "Analysis": "Your analysis here",\n'
-    prompt += '    "Suggestions": "Your suggested amendment here"\n'
-    prompt += '  },\n'
-    prompt += '  "Checklist Item 2: Limitation of Libaility should be limited": {\n'
-    prompt += '    "S.No": "2",\n'
-    prompt += '    "Status": "Satisfied/Not satisfied",\n'
-    prompt += '    "Category": "Libaility",\n'
-    prompt += '    "Section Number": "6",\n'
-    prompt += '    "Analysis": "Your analysis here",\n'
-    prompt += '    "Suggestions": "Your suggested amendment here"\n'
-    prompt += '  }\n'
-    prompt += '}\n\n'
- 
-    prompt += "Checklist Items:\n"
-    for item in checklist_items:
-        prompt += f"- {item}\n"
- 
-    prompt += "\nContractual Agreement (Excerpt):\n" + contract_text + "\n\n"
-    prompt += "Begin your JSON analysis below:\n-----------------------------\n"
-    return prompt
-
-def parse_openai_response(response_text):
-    print(response_text)
-    try:
-        response_data = json.loads(response_text)
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        return pd.DataFrame(columns=['S.No', 'Status', 'Category', 'Section Number', 'Analysis', 'Suggestions'])
-
-    serial_no = 1
-    rows = []
-
-    for item, details in response_data.items():
-        row = {
-            "S.No": details.get("S.No", serial_no),
-            "Category": details.get("Category", "Unknown"),
-            "Checklist Item": item,
-            "Status": details.get("Status", ""),
-            "Section Number": details.get("Section Number", ""),
-            "Analysis": details.get("Analysis", ""),
-            "Suggestions": details.get("Suggestions", "")
-        }
-        rows.append(row)
-        serial_no += 1
-
-    df = pd.DataFrame(rows)
-    print(df)
-    return df
-
-
-  '''
-  
 def query_openai(prompt):
     try:
         response = openai.ChatCompletion.create(
@@ -339,34 +343,27 @@ def query_openai(prompt):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-'''
-q:if the uploaded cheklist items are fulfilled/satisfied
-cont:smart AI/legal responsible for verifying if the uploaded conrtractual doc fulfills the checklist criteria 
-info---sno.same as cheklist items 
-        sta:satisfied with suggtn
-        
-
-'''
-
 
 def create_analysis_prompt(checklist_items, contract_text):
     prompt_text = {
-    "question": (f'Analyze the Contractual Agreement "{contract_text}" and determine the satisfaction of each checklist item from the uploaded Excel file "{checklist_items}". '),
-    "context": "You are a smart legal Assistant responsible for verifying and analyzing if the contractual documentsfulfills the checklist criteria.",
+    "question": f"Analyze the uploaded contract agreement  {contract_text} and determine the if the uploaded checklist items {checklist_items}  are fulfilled/satisfaction for each checklist item from the {checklist_items}. ",
+    "context": "You are a smart legal Assistant responsible  for analyzing and verifying if the contractual document text fulfills the checklist criteria with the checklist items {checklist_items}.",
     "information": "These are the details of output schema:"
                     'Checklist Item 1: provide the checklist items from uploaded Excel": {\n'
-                    '    "S.No": "same from {checklist_items}",\n'
+                    '    "S.No": "Same as checklist items",\n'
                     '    "Status": "Satisfied/Not satisfied based on the analysis",\n'
-                    '    "Category": "category of checklist item same from {checklist_items}",\n'
+                    f'    "Category": "category of checklist item from uploaded checklist excel file {checklist_items}",\n'
                     '    "Section Number": "If satisfied, provide the section number",\n'
                     '    "Analysis": "Your analysis here",\n'
                     '    "Suggestions": "Your suggested amendment here"\n'
-                    '  },\n'    ,
-    "instruction":"Provide detailed analysis for each item, including suggestions for amendments or improvements, even if clauses are already included. "
+                    '  },\n'
+                    ,
+    "instruction":"Provide detailed analysis for each item, even if clauses are already included ,give suggestions for amendments or improvements. "
+                   ' "The number of checklist items should be exactly the same as the number of checklist items and category in the uploaded Excel file."'
                    '"Ensure to mention ACCURATE section numbers for all checklist items."'
                    '"Mention the exact section numbers from the contract relevant to each checklist item. "'
-                   '"Provide analysis only for checklist items present in the uploaded Excel file. "'
-                   '"Format the response in a structured JSON format with each item as a key, including analysis, suggestions,do not include any other verbose explanations "'
+                   '"Format the response in a structured JSON format with each item as a key, including analysis, suggestions, "'
+                   ' "Do not include any other verbose explanations apart from the response format"'
                    ' Example of format with proper spacing:\n'
                    '{\n'
                    '  "Checklist Item 1: Clause for pre-existing IP": {\n'
@@ -386,12 +383,12 @@ def create_analysis_prompt(checklist_items, contract_text):
                    '    "Suggestions": "Your suggested amendment here"\n'
                    '  }\n'
                    '}\n\n'
+                   
     "ResponseFormat:\n"
                     'The extracted elements should be in the following JSON format: The output should be a\n'
                     'markdown code snippet formatted in the following schema, including the leading and '
                     '    trailing "```json" and "```":'
                     '    ```json'                       
-                 
                     '{\n'
                     '  "Checklist Item 1: "string"//Checklist category": {\n'
                     '    "S.No": "integer"//,\n'
@@ -401,31 +398,26 @@ def create_analysis_prompt(checklist_items, contract_text):
                     '    "Analysis":  "string"//"Your analysis here",\n'
                     '    "Suggestions":  "string"//"Your suggested amendment here"\n'
                     '  },\n'
-                    
                     '}'
                     '```'
                      '  I want you to extract the features all the columns as a key-value pair like mentioned above '
                      '   in a JSON string'
-                    '```'
-
-                   
+                    
+ 
                    ,}
       # You can add more information or prompts as needed
-      
 
+ 
     for item in checklist_items:
         prompt_text["instruction"] += f"- {item}\n"
-
+ 
     prompt_text["instruction"] += ("\nContractual Agreement (Excerpt):\n" + contract_text + "\n\n"
                                    "Begin your JSON analysis below:\n-----------------------------\n")
-
+ 
     return json.dumps(prompt_text)
 
-import json
-import pandas as pd
 
-import json
-import pandas as pd
+
 
 def parse_openai_response(response_text):
     try:
@@ -452,88 +444,23 @@ def parse_openai_response(response_text):
     rows = []
 
     for item, details in response_data.items():
+        checklist_item_part = item.split(": ")[-1]
         row = {
             "S.No": details.get("S.No", serial_no),
             "Category": details.get("Category", "Unknown"),
-            "Checklist Item": item,
+            "Checklist Item": checklist_item_part,
             "Status": details.get("Status", ""),
             "Section Number": details.get("Section Number", ""),
             "Analysis": details.get("Analysis", ""),
             "Suggestions": details.get("Suggestions", "")
         }
+        print("checklist items:",checklist_item_part)
         rows.append(row)
         serial_no += 1
 
     df = pd.DataFrame(rows)
     print(df)
     return df
-
-
-'''
-def parse_openai_response(response_text):
-    print(response_text)
-    try:
-        # Remove the "response ```json" prefix if present
-        response_text = response_text.replace("response ```json", "").strip()
-        
-        # Parse the JSON
-        response_data = json.loads(response_text)
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        return pd.DataFrame(columns=['S.No', 'Status', 'Category', 'Section Number', 'Analysis', 'Suggestions'])
-
-    serial_no = 1
-    rows = []
-
-    for item, details in response_data.items():
-        row = {
-            "S.No": details.get("S.No", serial_no),
-            "Category": details.get("Category", "Unknown"),
-            "Checklist Item": item,
-            "Status": details.get("Status", ""),
-            "Section Number": details.get("Section Number", ""),
-            "Analysis": details.get("Analysis", ""),
-            "Suggestions": details.get("Suggestions", "")
-        }
-        rows.append(row)
-        serial_no += 1
-
-    df = pd.DataFrame(rows)
-    print(df)
-    return df
-
-    print(response_text)
-    try:
-        response_data = json.loads(response_text)
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        return pd.DataFrame(columns=['S.No', 'Status', 'Category', 'Section Number', 'Analysis', 'Suggestions'])
-
-    serial_no = 1
-    rows = []
-
-    for item, details in response_data.items():
-        row = {
-            "S.No": details.get("S.No", serial_no),
-            "Category": details.get("Category", "Unknown"),
-            "Checklist Item": item,
-            "Status": details.get("Status", ""),
-            "Section Number": details.get("Section Number", ""),
-            "Analysis": details.get("Analysis", ""),
-            "Suggestions": details.get("Suggestions", "")
-        }
-        rows.append(row)
-        serial_no += 1
-
-    df = pd.DataFrame(rows)
-    print(df)
-    return df
-'''
-#....................
-
-#....................#
-
-#.#
 #.........callbacks.....
 
 # Callback to update collapsible div contents on button click
@@ -556,7 +483,7 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
         return html.Div(dbc.Alert(
             id="Nofile",
             is_open=False,
-            duration=3000,
+            duration=4000,
             fade=True,
             children=alert_text,
             style={
@@ -565,7 +492,8 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
             'color': 'white',  
             'margin': 'auto',  
             'margin-top': '20px',  
-            'text-align': 'center',  
+            'text-align': 'center', 
+            'font-size':'19px'
         }
         ))
 
@@ -658,10 +586,10 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
                                             'legend': {'orientation': 'h', 'x': 0.43, 'y': -0.2},
                                         },
                                     },
-                                    style={'position': 'relative', 'left': '35px', 'top': '-20px'}
+                                    style={    'height': '540px','position': 'relative', 'left': '35px', 'top': '-20px'}
                                 ),
                             ],
-                            style={'marginTop': '50px', 'text-align': 'center'}
+                            style={'marginTop': '50px', 'text-align': 'center','height':'20px'}
                         ),
                     ],
                 ),
@@ -687,6 +615,7 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
            'margin': 'auto',  # Center the alert box horizontally
            'margin-top': '20px',  # Add margin-top to center vertically (adjust as needed)
            'text-align': 'center',  # Center the text inside the alert box
+           'font-size':'19px'
        }
         ),)
 
@@ -749,6 +678,33 @@ def check_file_upload(n_clicks, mca_contents, checklist_contents):
     else:
         # Continue with the checklist analysis
         return False, ""
+#................................
+# Callback to set the href for the contract download
+@app.callback(
+    Output("download-contract", "data"),
+    [Input("btn-download-sample-contract", "n_clicks")],
+    prevent_initial_call=True
+)
+def download_sample_contract(n_clicks):
+    if n_clicks:
+        with open(sample_contract_path, 'rb') as contract_file:
+            contract_content = contract_file.read()
+
+        return dcc.send_bytes(contract_content, "sample_contract.pdf")
+
+
+# Callback to set the href for the checklist download
+@app.callback(
+    Output("download-checklist", "data"),
+    [Input("btn-download-sample-checklist", "n_clicks")],
+    prevent_initial_call=True
+)
+def download_sample_checklist(n_clicks):
+    if n_clicks:
+        with open(sample_checklist_path, 'rb') as checklist_file:
+            checklist_content = checklist_file.read()
+
+        return dcc.send_bytes(checklist_content, "sample_checklist.xlsx")
 
 
 #.........................
