@@ -525,6 +525,10 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
         num_satisfied = df[df['Status'] == 'Satisfied'].shape[0]  # Example: Count of 'Satisfied' rows in the result dataframe
         num_unsatisfied = df[df['Status'] == 'Unsatisfied'].shape[0]  # Example: Count of 'Unsatisfied' rows
 
+        # Calculate percentages for progress bars
+        percentage_satisfied = (num_satisfied / num_checklist_items) * 100
+        percentage_unsatisfied = (num_unsatisfied / num_checklist_items) * 100
+
         # Further processing of the OpenAI response and updating the displayed content
         updated_content = html.Div(
             children=[
@@ -568,10 +572,22 @@ def update_collapsible_content(n_clicks, mca_contents, checklist_contents, mca_f
                             children=[
                                 html.P(f"Contract File: {mca_filename}", style={'margin':'0px','text-align': 'center'}),
                                 html.P(f"Number of Checklist Items: {num_checklist_items}", style={'margin':'0px','text-align': 'center'}),
-                                html.P(f"Number of Satisfied Items: {num_satisfied}", style={'text-align': 'center'}),
-                                html.P(f"Number of Unsatisfied Items: {num_unsatisfied}", style={'text-align': 'center'}),
-
-                                # Pie Chart
+                                #html.P(f"Number of Satisfied Items: {num_satisfied}", style={'text-align': 'center'}),
+                                #html.P(f"Number of Unsatisfied Items: {num_unsatisfied}", style={'text-align': 'center'}),
+                                # Progress Bars
+                                    html.Div(
+                                        children=[
+                                            html.P("Satisfied Items:"),
+                                            dcc.Progress(id='progress-satisfied', value=percentage_satisfied, style={'height': '20px'}),
+                                            html.P(f"{num_satisfied}/{num_checklist_items}", style={'text-align': 'center'}),
+                    
+                                            html.P("Unsatisfied Items:"),
+                                            dcc.Progress(id='progress-unsatisfied', value=percentage_unsatisfied, style={'height': '20px'}),
+                                            html.P(f"{num_unsatisfied}/{num_checklist_items}", style={'text-align': 'center'}),
+                                        ],
+                                        style={'marginTop': '20px', 'text-align': 'center'}
+                                    ),
+                                                    # Pie Chart
                                 dcc.Graph(
                                     figure={
                                         'data': [
